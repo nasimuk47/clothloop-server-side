@@ -30,7 +30,7 @@ async function run() {
             const result = await cursor.toArray();
             res.send(result);
         });
-
+        //  single service deitais ---------------------
         app.get("/Services/:id", async (req, res) => {
             const id = req.params.id;
 
@@ -39,6 +39,9 @@ async function run() {
             res.send(result);
         });
 
+        // ---------------------------------
+
+        // my booking  start--------------
         app.post("/bookings", async (req, res) => {
             const bookingData = req.body;
             console.log(bookingData);
@@ -52,6 +55,20 @@ async function run() {
             const result = await cursor.toArray();
             res.send(result);
         });
+
+        // my booking end-----------------
+
+        // add new service-----------------
+
+        app.post("/services", async (req, res) => {
+            const newService = req.body;
+            console.log(newService);
+
+            const result = await serviceCollection.insertOne(newService);
+            res.send(result);
+        });
+
+        // add new service end ----------------
 
         await client.db("admin").command({ ping: 1 });
         console.log(
