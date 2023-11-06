@@ -2,6 +2,7 @@ const express = require("express");
 const cors = require("cors");
 require("dotenv").config();
 const app = express();
+
 const port = process.env.PORT || 5000;
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 
@@ -39,8 +40,6 @@ async function run() {
             res.send(result);
         });
 
-        // ---------------------------------
-
         // my booking  start--------------
         app.post("/bookings", async (req, res) => {
             const bookingData = req.body;
@@ -56,7 +55,7 @@ async function run() {
             res.send(result);
         });
 
-        // my booking end-----------------
+        // my booking done-----------------
 
         // add new service-----------------
 
@@ -68,7 +67,84 @@ async function run() {
             res.send(result);
         });
 
-        // add new service end ----------------
+        // add new service done ----------------
+
+        // Delete card  from bookings --------------
+
+        app.delete("/bookings/:id", async (req, res) => {
+            const id = req.params.id;
+            try {
+                const result = await BookingCollection.deleteOne({
+                    _id: new ObjectId(id),
+                });
+                if (result.deletedCount > 0) {
+                    res.json({ deletedCount: result.deletedCount });
+                } else {
+                    res.status(404).json({ deletedCount: 0 });
+                }
+            } catch (error) {
+                console.error("Error deleting service:", error);
+                res.status(500).json({ deletedCount: 0 });
+            }
+        });
+
+        // deleted action done -------------------
+
+        // Get a single booking by ID
+
+        app.get("/bookings/:id", async (req, res) => {
+            const id = req.params.id;
+
+            try {
+                console.log("Request received for booking ID:", id);
+
+                const query = { _id: new ObjectId(id) };
+                const result = await BookingCollection.findOne(query);
+
+                if (result) {
+                    console.log("Booking found:", result);
+                    res.json(result);
+                } else {
+                    console.log("Booking not found for ID:", id);
+                    res.status(404).json({ message: "Booking not found" });
+                }
+            } catch (error) {
+                console.error("Error fetching booking:", error);
+
+                res.status(500).json({ message: "Internal Server Error" });
+            }
+        });
+
+        // done---------------
+
+        // Update a booking by ID
+        app.put("/bookings/:id", async (req, res) => {
+            const id = req.params.id;
+
+            if (!ObjectId.isValid(id)) {
+                return res.status(400).json({ message: "Invalid booking ID" });
+            }
+
+            const updatedData = req.body;
+
+            try {
+                const result = await BookingCollection.updateOne(
+                    { _id: new ObjectId(id) },
+                    { $set: updatedData }
+                );
+
+                if (result.modifiedCount > 0) {
+                    res.json({ message: "Booking updated successfully" });
+                } else {
+                    res.status(404).json({ message: "Booking not found" });
+                }
+            } catch (error) {
+                console.error(error);
+                res.status(500).json({ message: "Internal Server Error" });
+            }
+        });
+
+        // Update service done -----------------------------------------------------------
 
         await client.db("admin").command({ ping: 1 });
         console.log(
