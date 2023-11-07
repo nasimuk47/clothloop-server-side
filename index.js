@@ -1,13 +1,22 @@
 const express = require("express");
 const cors = require("cors");
+const jwt = require("jsonwebtoken");
+const cookieParser = require("cookie-parser");
 require("dotenv").config();
 const app = express();
 
 const port = process.env.PORT || 5000;
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 
-app.use(cors());
+app.use(
+    cors({
+        origin: ["http://localhost:5173"],
+
+        credentials: true,
+    })
+);
 app.use(express.json());
+app.use(cookieParser());
 
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.qtgfrql.mongodb.net/clothes?retryWrites=true&w=majority`;
 
@@ -26,6 +35,54 @@ async function run() {
         const serviceCollection = client.db("Clothes").collection("Services");
         const BookingCollection = client.db("Clothes").collection("Booking"); // Renamed Bokking to Booking
 
+        // AuthReleted api
+
+        app.post("/jwt", async (req, res) => {
+            const user = req.body;
+            console.log("user for token", user);
+
+            const token = jwt.sign(user, process.env.SECRET, {
+                expiresIn: "1h",
+            });
+            res.cookie("token", token, {
+                httpOnly: true,
+                secure: true,
+                sameSite: "none",
+            });
+            res.send({ success: true });
+        });
+
+        app.post("/logout", async (req, res) => {
+            const user = req.body;
+
+            console.log("logged out", user);
+            res.clearCookie("token", { maxAge: 0 }).send({ success: true });
+        });
+
+        // middlewere
+
+        const logger = (req, res, next) => {
+            console.log("log:info", req.method, req.url);
+            next();
+        };
+        const verifyToken = (req, res, next) => {
+            const token = req.header("Authorization");
+            console.log("Token in the middleware:", token);
+
+            if (!token) {
+                return res.status(401).json({ message: "Unauthorized" });
+            }
+
+            try {
+                const decoded = jwt.verify(token, process.env.SECRET);
+                req.user = decoded;
+                next();
+            } catch (error) {
+                return res.status(401).json({ message: "Token is not valid" });
+            }
+        };
+
+        // services related api
         app.get("/Services", async (req, res) => {
             const cursor = serviceCollection.find();
             const result = await cursor.toArray();
@@ -96,20 +153,20 @@ async function run() {
             const id = req.params.id;
 
             try {
-                console.log("Request received for booking ID:", id);
+                console.log(id);
 
                 const query = { _id: new ObjectId(id) };
                 const result = await BookingCollection.findOne(query);
 
                 if (result) {
-                    console.log("Booking found:", result);
+                    console.log(result);
                     res.json(result);
                 } else {
-                    console.log("Booking not found for ID:", id);
+                    console.log(id);
                     res.status(404).json({ message: "Booking not found" });
                 }
             } catch (error) {
-                console.error("Error fetching booking:", error);
+                console.error(error);
 
                 res.status(500).json({ message: "Internal Server Error" });
             }
