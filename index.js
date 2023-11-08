@@ -66,26 +66,26 @@ async function run() {
 
         // middlewere
 
-        // const logger = (req, res, next) => {
-        //     console.log("log:info", req.method, req.url);
-        //     next();
-        // };
-        // const verifyToken = (req, res, next) => {
-        //     const token = req.header("Authorization");
-        //     console.log("Token in the middleware:", token);
+        const logger = (req, res, next) => {
+            console.log("log:info", req.method, req.url);
+            next();
+        };
+        const verifyToken = (req, res, next) => {
+            const token = req.header("Authorization");
+            console.log("Token in the middleware:", token);
 
-        //     if (!token) {
-        //         return res.status(401).json({ message: "Unauthorized" });
-        //     }
+            if (!token) {
+                return res.status(401).json({ message: "Unauthorized" });
+            }
 
-        //     try {
-        //         const decoded = jwt.verify(token, process.env.SECRET);
-        //         req.user = decoded;
-        //         next();
-        //     } catch (error) {
-        //         return res.status(401).json({ message: "Token is not valid" });
-        //     }
-        // };
+            try {
+                const decoded = jwt.verify(token, process.env.SECRET);
+                req.user = decoded;
+                next();
+            } catch (error) {
+                return res.status(401).json({ message: "Token is not valid" });
+            }
+        };
 
         // services related api
         app.get("/Services", async (req, res) => {
@@ -111,7 +111,7 @@ async function run() {
             res.send(result);
         });
 
-        app.get("/bookings", async (req, res) => {
+        app.get("/bookings", verifyToken, async (req, res) => {
             const cursor = BookingCollection.find();
             const result = await cursor.toArray();
             res.send(result);
