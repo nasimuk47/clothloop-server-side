@@ -38,7 +38,7 @@ async function run() {
         // await client.connect();
 
         const serviceCollection = client.db("Clothes").collection("Services");
-        const BookingCollection = client.db("Clothes").collection("Booking"); // Renamed Bokking to Booking
+        const BookingCollection = client.db("Clothes").collection("Booking");
 
         // AuthReleted api
 
@@ -111,7 +111,7 @@ async function run() {
             res.send(result);
         });
 
-        app.get("/bookings", verifyToken, async (req, res) => {
+        app.get("/bookings", async (req, res) => {
             const cursor = BookingCollection.find();
             const result = await cursor.toArray();
             res.send(result);
